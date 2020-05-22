@@ -1,23 +1,34 @@
 import React, { useEffect, useState } from 'react';
-import { Text, View, TextInput, Dimensions, KeyboardAvoidingView } from 'react-native';
+import { AsyncStorage, View, TextInput, Dimensions } from 'react-native';
 import {connect} from 'react-redux';
 import { Button, Overlay } from 'react-native-elements';
 import Icon from 'react-native-vector-icons/FontAwesome';
 import MapView, {Marker} from 'react-native-maps';
 import * as Location from 'expo-location';
 import * as Permissions from 'expo-permissions';
+import socketIOClient from "socket.io-client";
+
+var socket = socketIOClient("http://192.168.1.14:3000");
 
 function MapScreen(props) {
   const [currentLatitude, setCurrentLatitude] = useState(48.866667);
   const [currentLongitude, setCurrentLongitude] = useState(2.3333334);
   const [addPOI, setAddPOI] = useState(false);
-  // const [listPOI, setListPoi] = useState([]);
+  const [listPOI, setListPOI] = useState([]);
   const [isVisible, setIsVisible] = useState(false);
   const [coordPOI, setCoordPOI] = useState();
   const [titrePOI, setTitrePOI] = useState();
   const [descPOI, setDescPOI] = useState();
+  const [listCoords, setListCoords] = useState([]);
 
   useEffect(() => {
+    AsyncStorage.getItem("POIList", (error, value) => {
+      if (value) {
+        setListPOI(JSON.parse(value))
+      }
+    })
+
+
     async function askPermissions() {
       var { status } = await Permissions.askAsync(Permissions.LOCATION);
       if (status === 'granted') {
@@ -25,14 +36,22 @@ function MapScreen(props) {
           (location) => {
             setCurrentLatitude(location.coords.latitude);
             setCurrentLongitude(location.coords.longitude)
+
+            socket.emit("sendCoords", {pseudo: props.userPseudo, latitude: location.coords.latitude, longitude: location.coords.longitude})
           }
         )
       }
     }
     askPermissions();
-  }, [currentLongitude, currentLatitude])
+  }, [])
 
-  var POIMarkersTab = props.POIListToDisplay.map((POI, i) => {
+  useEffect(() => {
+    socket.on("sendCoordsToAll", (coordsData) => {
+      setListCoords([coordsData]);
+    })
+  }, [listCoords])
+
+  var POIMarkersTab = listPOI.map((POI, i) => {
     return (
       <Marker 
         key={i}
@@ -40,6 +59,18 @@ function MapScreen(props) {
         title = {POI.title}
         description = {POI.description}
         pinColor={'blue'}
+      />
+    )
+  })
+
+  var friendsMarkersTab = listCoords.map((coordsData, i) => {
+    return (
+      <Marker 
+        key={i}
+        coordinate={{latitude: coordsData.latitude, longitude: coordsData.longitude}}
+        title = {coordsData.pseudo}
+        description = 'is here'
+        pinColor={'green'}
       />
     )
   })
@@ -69,6 +100,7 @@ function MapScreen(props) {
         />
 
         {POIMarkersTab}
+        {friendsMarkersTab}
       </MapView>
 
       <Button 
@@ -98,7 +130,12 @@ function MapScreen(props) {
             style={{borderColor: "#000000", borderBottomWidth: 1, marginBottom: 36}} />
           <Button title="Ajouter POI" buttonStyle={{backgroundColor: '#ea4e52'}} 
             onPress={() => {
-              props.addPOI({latitude: coordPOI.latitude, longitude: coordPOI.longitude, title: titrePOI, description: descPOI});
+              //props.addPOI({latitude: coordPOI.latitude, longitude: coordPOI.longitude, title: titrePOI, description: descPOI});
+
+              var copyListPOI = [...listPOI, {latitude: coordPOI.latitude, longitude: coordPOI.longitude, title: titrePOI, description: descPOI}]
+              AsyncStorage.setItem("POIList", JSON.stringify(copyListPOI));
+              setListPOI(copyListPOI);
+
               setIsVisible(false)}
             }
           />

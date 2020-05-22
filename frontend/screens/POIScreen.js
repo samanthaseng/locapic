@@ -1,19 +1,28 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import {connect} from 'react-redux';
-import { Text, View, ScrollView } from 'react-native';
+import { AsyncStorage, Text, View, ScrollView } from 'react-native';
 import { ListItem } from 'react-native-elements';
 import Icon from 'react-native-vector-icons/FontAwesome';
 
-function ChatScreen(props) { 
+function POIScreen(props) { 
+    const [listPOI, setListPOI] = useState([]);
+
+    useEffect(() => {
+        AsyncStorage.getItem("POIList", (error, value) => {
+            if (value) {
+              setListPOI(JSON.parse(value))
+            }
+        })
+    })
+
     return (
         <View>
             <Text style={{textAlign: 'center', marginTop: 50, marginBottom: 20}}>POI List</Text>
             <ScrollView>
                 {
-                    props.POIListToDisplay.map((POI, i) => (
+                    listPOI.map((POI, i) => (
                         <ListItem 
                             key={i}
-                            //leftAvatar={{ source: { uri: l.avatar_url } }}
                             title={POI.title}
                             subtitle={POI.description}
                             rightIcon={
@@ -22,7 +31,16 @@ function ChatScreen(props) {
                                     name='trash'
                                     size={24}
                                     color='#EA4E52'
-                                    onPress={() => {props.deletePOI(POI.title)}}
+                                    onPress={() => {
+                                        //props.deletePOI(POI.title)
+                                        AsyncStorage.removeItem("POIList");
+                                        var copyListPOI = [...listPOI];
+                                        console.log(copyListPOI)
+                                        copyListPOI = copyListPOI.filter((e) => {e.title !== POI.title});
+                                        console.log(copyListPOI)
+                                        AsyncStorage.setItem("POIList", JSON.stringify(copyListPOI));
+                                        setListPOI(copyListPOI);
+                                    }}
                                 />
                             }
                             bottomDivider
@@ -49,4 +67,4 @@ function mapDispatchToProps(dispatch) {
 export default connect(
     mapStateToProps, 
     mapDispatchToProps
-)(ChatScreen);
+)(POIScreen);

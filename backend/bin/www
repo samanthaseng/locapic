@@ -25,9 +25,14 @@ var io = require('socket.io')(server); // Initialisation de socket.io
 
 io.on('connection', function(socket){
   console.log('a user is connected')
+
   socket.on('sendMessage', function(messageData) {
     io.emit('sendMessageToAll', messageData);
-  })
+  });
+
+  socket.on('sendCoords', function(coordsData) {
+    socket.broadcast.emit('sendCoordsToAll', coordsData)
+  });
 });
 
 /**
