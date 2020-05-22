@@ -1,29 +1,44 @@
-import React, {useState} from 'react';
+import React, {useState, useEffect} from 'react';
 import {connect} from 'react-redux';
-import { StyleSheet, ImageBackground, View } from 'react-native';
+import { AsyncStorage, Text, StyleSheet, ImageBackground } from 'react-native';
 import { Input, Button } from 'react-native-elements';
 import Icon from 'react-native-vector-icons/FontAwesome';
 
 function HomeScreen({navigation, validatePseudo}) {
     const [pseudo, setPseudo] = useState('')
 
+    useEffect(() => {
+        AsyncStorage.getItem("pseudo", 
+            function(error, pseudoData) {
+                setPseudo(pseudoData);
+            }
+        );     
+    }, []);
+
+    var messageHome;
+    if (pseudo) {
+        messageHome = <Text style={{marginBottom: 20, color: '#ffffff', fontSize: 18}}>Welcome back {pseudo}!</Text>
+    } else {
+        messageHome = <Input
+                        containerStyle = {{marginBottom: 25, width: '70%'}}
+                        placeholder='John'
+                        leftIcon={
+                            <Icon
+                                type='font-awesome'
+                                name='user'
+                                size={24}
+                                color='#EA4E52'
+                                style={{margin: 10}}
+                            />
+                        }
+                        onChangeText={(value) => setPseudo(value)}
+                        value = {pseudo}
+                      />
+    }
+
     return (
         <ImageBackground source={require('../assets/home.jpg')} style={styles.mainContainer}>
-            <Input
-                containerStyle = {{marginBottom: 25, width: '70%'}}
-                placeholder='John'
-                leftIcon={
-                    <Icon
-                        type='font-awesome'
-                        name='user'
-                        size={24}
-                        color='#EA4E52'
-                        style={{margin: 10}}
-                    />
-                }
-                onChangeText={(value) => setPseudo(value)}
-                value = {pseudo}
-            />
+            {messageHome}
             <Button 
                 title="Go to Map"
                 icon={
@@ -35,7 +50,8 @@ function HomeScreen({navigation, validatePseudo}) {
                 }
                 onPress={() => {
                     validatePseudo(pseudo);
-                    navigation.navigate('Map')
+                    AsyncStorage.setItem("pseudo", pseudo);
+                    navigation.navigate('Map');
                 }}
             />        
         </ImageBackground>

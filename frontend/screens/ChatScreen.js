@@ -1,4 +1,4 @@
-import React, {useState} from 'react';
+import React, {useState, useEffect} from 'react';
 import { StyleSheet, Text, View, KeyboardAvoidingView, TextInput, ScrollView } from 'react-native';
 import {connect} from 'react-redux';
 import { ListItem, Button } from 'react-native-elements';
@@ -12,10 +12,11 @@ function ChatScreen(props) {
     const [currentMessage, setCurrentMessage] = useState('');
     const [listMessage, setListMessage] = useState([]);
 
-    
-    socket.on('sendMessageToAll', (messageData) => {
-        setListMessage([...listMessage, messageData]);
-    })
+    useEffect(() => {
+        socket.on('sendMessageToAll', (messageData) => {
+            setListMessage([...listMessage, messageData]);
+        })
+    }, [listMessage]);    
     
     // Emojis
     var tabUnicodes = [
