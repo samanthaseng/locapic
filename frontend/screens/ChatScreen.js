@@ -6,7 +6,7 @@ import Icon from 'react-native-vector-icons/FontAwesome';
 
 import socketIOClient from "socket.io-client";
 
-var socket = socketIOClient("http://192.168.1.14:3000");
+var socket = socketIOClient("http://192.168.1.14:3000", { forceNode: true });
 
 function ChatScreen(props) {
     const [currentMessage, setCurrentMessage] = useState('');

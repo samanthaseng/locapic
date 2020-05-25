@@ -5,21 +5,25 @@ import { Input, Button } from 'react-native-elements';
 import Icon from 'react-native-vector-icons/FontAwesome';
 
 function HomeScreen({navigation, validatePseudo}) {
-    const [pseudo, setPseudo] = useState('')
+    const [pseudo, setPseudo] = useState('');
+    const [enterPseudo, setEnterPseudo] = useState(false);
 
     useEffect(() => {
         AsyncStorage.getItem("pseudo", 
             function(error, pseudoData) {
                 setPseudo(pseudoData);
+                if (pseudoData) {
+                    setEnterPseudo(true);
+                }
             }
         );     
     }, []);
 
-    var messageHome;
-    if (pseudo) {
-        messageHome = <Text style={{marginBottom: 20, color: '#ffffff', fontSize: 18}}>Welcome back {pseudo}!</Text>
+    var inputPseudo;
+    if (enterPseudo) {
+        inputPseudo = <Text style={{marginBottom: 20, color: '#ffffff', fontSize: 18}}>Welcome back {pseudo}!</Text>
     } else {
-        messageHome = <Input
+        inputPseudo = <Input
                         containerStyle = {{marginBottom: 25, width: '70%'}}
                         placeholder='John'
                         leftIcon={
@@ -38,7 +42,7 @@ function HomeScreen({navigation, validatePseudo}) {
 
     return (
         <ImageBackground source={require('../assets/home.jpg')} style={styles.mainContainer}>
-            {messageHome}
+            {inputPseudo}
             <Button 
                 title="Go to Map"
                 icon={
@@ -53,7 +57,7 @@ function HomeScreen({navigation, validatePseudo}) {
                     AsyncStorage.setItem("pseudo", pseudo);
                     navigation.navigate('Map');
                 }}
-            />        
+            />         
         </ImageBackground>
     );
 }

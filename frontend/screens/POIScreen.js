@@ -5,22 +5,14 @@ import { ListItem } from 'react-native-elements';
 import Icon from 'react-native-vector-icons/FontAwesome';
 
 function POIScreen(props) { 
-    const [listPOI, setListPOI] = useState([]);
-
-    useEffect(() => {
-        AsyncStorage.getItem("POIList", (error, value) => {
-            if (value) {
-              setListPOI(JSON.parse(value))
-            }
-        })
-    })
+    
 
     return (
         <View>
             <Text style={{textAlign: 'center', marginTop: 50, marginBottom: 20}}>POI List</Text>
             <ScrollView>
                 {
-                    listPOI.map((POI, i) => (
+                    props.POIListToDisplay.map((POI, i) => (
                         <ListItem 
                             key={i}
                             title={POI.title}
@@ -32,14 +24,9 @@ function POIScreen(props) {
                                     size={24}
                                     color='#EA4E52'
                                     onPress={() => {
-                                        //props.deletePOI(POI.title)
-                                        AsyncStorage.removeItem("POIList");
-                                        var copyListPOI = [...listPOI];
-                                        console.log(copyListPOI)
-                                        copyListPOI = copyListPOI.filter((e) => {e.title !== POI.title});
-                                        console.log(copyListPOI)
+                                        var copyListPOI = props.POIListToDisplay.filter((e) => {e.id !== POI.id});
                                         AsyncStorage.setItem("POIList", JSON.stringify(copyListPOI));
-                                        setListPOI(copyListPOI);
+                                        props.deletePOI(POI.id);
                                     }}
                                 />
                             }
@@ -58,8 +45,8 @@ function mapStateToProps(state) {
 
 function mapDispatchToProps(dispatch) {
     return {
-        deletePOI: function(POItitle) { 
-            dispatch( {type: 'deletePOI', POItitle: POItitle} ) 
+        deletePOI: function(POIId) { 
+            dispatch( {type: 'deletePOI', POIId: POIId} ) 
         }
     }
 }

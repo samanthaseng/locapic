@@ -8,13 +8,12 @@ import * as Location from 'expo-location';
 import * as Permissions from 'expo-permissions';
 import socketIOClient from "socket.io-client";
 
-var socket = socketIOClient("http://192.168.1.14:3000");
+var socket = socketIOClient("http://192.168.1.14:3000", { forceNode: true });
 
 function MapScreen(props) {
   const [currentLatitude, setCurrentLatitude] = useState(48.866667);
   const [currentLongitude, setCurrentLongitude] = useState(2.3333334);
   const [addPOI, setAddPOI] = useState(false);
-  const [listPOI, setListPOI] = useState([]);
   const [isVisible, setIsVisible] = useState(false);
   const [coordPOI, setCoordPOI] = useState();
   const [titrePOI, setTitrePOI] = useState();
@@ -24,10 +23,9 @@ function MapScreen(props) {
   useEffect(() => {
     AsyncStorage.getItem("POIList", (error, value) => {
       if (value) {
-        setListPOI(JSON.parse(value))
+        props.getPOI(JSON.parse(value));
       }
     })
-
 
     async function askPermissions() {
       var { status } = await Permissions.askAsync(Permissions.LOCATION);
@@ -47,11 +45,14 @@ function MapScreen(props) {
 
   useEffect(() => {
     socket.on("sendCoordsToAll", (coordsData) => {
-      setListCoords([coordsData]);
+      var listCoordsCopy = [...listCoords];
+      listCoordsCopy = listCoordsCopy.filter(user => user.pseudo !== coordsData.pseudo)
+      listCoordsCopy.push(coordsData);
+      setListCoords(listCoordsCopy);
     })
   }, [listCoords])
 
-  var POIMarkersTab = listPOI.map((POI, i) => {
+  var POIMarkersTab = props.POIListToDisplay.map((POI, i) => {
     return (
       <Marker 
         key={i}
@@ -130,14 +131,18 @@ function MapScreen(props) {
             style={{borderColor: "#000000", borderBottomWidth: 1, marginBottom: 36}} />
           <Button title="Ajouter POI" buttonStyle={{backgroundColor: '#ea4e52'}} 
             onPress={() => {
-              //props.addPOI({latitude: coordPOI.latitude, longitude: coordPOI.longitude, title: titrePOI, description: descPOI});
+              const rand = 1 + Math.random() * (99);
+              var newPOI = {id: rand, latitude: coordPOI.latitude, longitude: coordPOI.longitude, title: titrePOI, description: descPOI}
 
-              var copyListPOI = [...listPOI, {latitude: coordPOI.latitude, longitude: coordPOI.longitude, title: titrePOI, description: descPOI}]
+              var copyListPOI = [...props.POIListToDisplay, newPOI];
               AsyncStorage.setItem("POIList", JSON.stringify(copyListPOI));
-              setListPOI(copyListPOI);
+              props.addPOI(newPOI);
 
-              setIsVisible(false)}
-            }
+              setIsVisible(false);
+              setCoordPOI();
+              setTitrePOI();
+              setDescPOI();
+            }}
           />
         </View>
       </Overlay>
@@ -153,7 +158,10 @@ function mapStateToProps(state) {
 function mapDispatchToProps(dispatch) {
   return {
       addPOI: function(POI) { 
-          dispatch( {type: 'savePOI', POI: POI} ) 
+        dispatch( {type: 'savePOI', POI: POI} ) 
+      },
+      getPOI: function(POIList) {
+        dispatch( {type: 'getPOI', POIList: POIList})
       }
   }
 }
